@@ -1,0 +1,236 @@
+diff --git a/README.md b/README.md
+new file mode 100644
+index 0000000..e69de29
+--- /dev/null
++++ b/README.md
+@@ -0,0 +1,120 @@
++# mzanzi-ai
++
++This repository contains the Mzanzi AI chatbot integration and a minimal backend that proxies requests to Hugging Face models.
++
++Quickstart (development)
++1. Copy `.env.example` to `.env` and set values (HUGGINGFACE_API_TOKEN, HF_MODEL_ID).
++2. Install dependencies:
++   - `npm install`
++3. Start backend:
++   - `npm run dev` (requires nodemon) or `npm start`
++
++API
++- POST /api/chat
++  - Body: For chat-capable HF models:
++    ```json
++    {
++      "inputs": {
++        "messages": [
++          {"role":"user","content":"Hello!"}
++        ],
++        "max_new_tokens": 256
++      }
++    }
++    ```
++  - Body: For text-gen HF models:
++    ```json
++    {
++      "inputs": "Write a friendly greeting in Xhosa."
++    }
++    ```
++  - Response:
++    ```json
++    {
++      "result": <Hugging Face inference response>
++    }
++    ```
++
++Local testing examples
++- Chat-style request (example):
++  ```bash
++  curl -X POST http://localhost:3000/api/chat \
++    -H "Content-Type: application/json" \
++    -d '{"inputs": {"messages":[{"role":"user","content":"Hello"}]}}'
++  ```
++- Plain-text request example:
++  ```bash
++  curl -X POST http://localhost:3000/api/chat \
++    -H "Content-Type: application/json" \
++    -d '{"inputs":"Write a short poem in isiZulu."}'
++  ```
++
++Deployment
++- A Dockerfile is included to build a container.
++- A GitHub Actions workflow is included as an example to build and push to GHCR:
++  - Add the repository secret HUGGINGFACE_API_TOKEN before running deployments.
++  - The workflow uses the built repository owner/name to tag the image as ghcr.io/{owner}/{repo}:latest.
++
++Notes
++- This proxy avoids exposing your Hugging Face token client-side.
++- Make sure to set environment variables (HUGGINGFACE_API_TOKEN and HF_MODEL_ID) as secrets in GitHub if you use Actions.
++
++Security reminders
++- Never commit your HUGGINGFACE_API_TOKEN to the repo.
++- In CI use the repository secret HUGGINGFACE_API_TOKEN (Settings → Secrets and variables → Actions).
++- Consider rate-limiting or authentication on /api/chat before exposing publicly.
++
+diff --git a/.env.example b/.env.example
+new file mode 100644
+index 0000000..e69de29
+--- /dev/null
++++ b/.env.example
+@@ -0,0 +1,6 @@
++PORT=3000
++
++# Hugging Face
++HUGGINGFACE_API_TOKEN=your_hf_api_token_here
++HF_MODEL_ID=deepseek-ai/DeepSeek-V3-0324
++ALLOWED_ORIGINS=http://localhost:3000
+diff --git a/Dockerfile b/Dockerfile
+new file mode 100644
+index 0000000..e69de29
+--- /dev/null
++++ b/Dockerfile
+@@ -0,0 +1,12 @@
++FROM node:18-alpine
++
++WORKDIR /app
++
++COPY package.json package-lock.json* ./
++RUN npm ci --production
++
++COPY . .
++
++EXPOSE 3000
++CMD ["node", "server.js"]
+diff --git a/package.json b/package.json
+new file mode 100644
+index 0000000..e69de29
+--- /dev/null
++++ b/package.json
+@@ -0,0 +1,32 @@
++{
++  "name": "mzanzi-ai-backend",
++  "version": "0.1.0",
++  "main": "server.js",
++  "scripts": {
++    "start": "node server.js",
++    "dev": "nodemon server.js"
++  },
++  "dependencies": {
++    "dotenv": "^16.0.0",
++    "express": "^4.18.2",
++    "node-fetch": "^2.6.7"
++  },
++  "devDependencies": {
++    "nodemon": "^2.0.22"
++  }
++}
+diff --git a/server.js b/server.js
+new file mode 100644
+index 0000000..e69de29
+--- /dev/null
++++ b/server.js
+@@ -0,0 +1,128 @@
++// Minimal Express proxy to the Hugging Face Inference API
++require('dotenv').config();
++const express = require('express');
++const fetch = require('node-fetch');
++
++const app = express();
++app.use(express.json());
++
++const HF_TOKEN = process.env.HUGGINGFACE_API_TOKEN;
++const HF_MODEL = process.env.HF_MODEL_ID;
++const PORT = process.env.PORT || 3000;
++const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
++
++if (!HF_TOKEN || !HF_MODEL) {
++  console.warn('Warning: HUGGINGFACE_API_TOKEN or HF_MODEL_ID not set in env');
++}
++
++// Basic CORS handling
++app.use((req, res, next) => {
++  const origin = req.get('origin') || '*';
++  if (!ALLOWED_ORIGINS.length || ALLOWED_ORIGINS.includes(origin) || origin === '*') {
++    res.set('Access-Control-Allow-Origin', origin === '*' ? '*' : origin);
++  }
++  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
++  res.set('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
++  if (req.method === 'OPTIONS') return res.sendStatus(200);
++  next();
++});
++
++app.post('/api/chat', async (req, res) => {
++  try {
++    // Accept either:
++    // - { inputs: "text" }
++    // - { inputs: { messages: [...], ... } }
++    // - or a free-form body that matches the HF Inference API
++    const payload = req.body;
++
++    if (!HF_TOKEN || !HF_MODEL) {
++      return res.status(500).json({ error: 'HUGGINGFACE_API_TOKEN or HF_MODEL_ID not configured' });
++    }
++
++    const url = `https://api-inference.huggingface.co/models/${HF_MODEL}`;
++
++    const response = await fetch(url, {
++      method: 'POST',
++      headers: {
++        Authorization: `Bearer ${HF_TOKEN}`,
++        'Content-Type': 'application/json'
++      },
++      body: JSON.stringify(payload)
++    });
++
++    if (!response.ok) {
++      const txt = await response.text();
++      return res.status(response.status).send({ error: txt });
++    }
++
++    const data = await response.json();
++    // Return result wrapper for client convenience
++    res.json({ result: data });
++  } catch (err) {
++    console.error('Error in /api/chat:', err);
++    res.status(500).send({ error: String(err) });
++  }
++});
++
++app.get('/healthz', (req, res) => res.send({ status: 'ok' }));
++
++app.listen(PORT, () => {
++  console.log(`Server listening on port ${PORT}`);
++});
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+new file mode 100644
+index 0000000..e69de29
+--- /dev/null
++++ b/.github/workflows/deploy.yml
+@@ -0,0 +1,34 @@
++name: Build and publish backend image
++
++on:
++  push:
++    branches:
++      - main
++      - 'deploy/*'
++
++jobs:
++  build-and-publish:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - name: Set up QEMU
++        uses: docker/setup-qemu-action@v2
++      - name: Set up Docker Buildx
++        uses: docker/setup-buildx-action@v2
++      - name: Login to GitHub Container Registry
++        uses: docker/login-action@v2
++        with:
++          registry: ghcr.io
++          username: ${{ github.actor }}
++          password: ${{ secrets.GITHUB_TOKEN }}
++      - name: Build and push
++        uses: docker/build-push-action@v4
++        with:
++          context: .
++          push: true
++          tags: ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:latest
