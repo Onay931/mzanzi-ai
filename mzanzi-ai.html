@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mzanzi-AI | Free AI for South Africa</title>
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #ffffff;
+      color: #1e293b;
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    header {
+      text-align: center;
+      padding: 20px 0;
+    }
+    header img {
+      width: 120px;
+    }
+    h1 {
+      font-size: 24px;
+      color: #0f172a;
+      margin: 10px 0;
+    }
+    .tagline {
+      color: #d4af37;
+      font-weight: 600;
+    }
+    .card-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 15px;
+      margin: 30px 0;
+    }
+    .card {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+    }
+    .card h3 {
+      margin: 0 0 10px 0;
+      color: #0f172a;
+    }
+    .btn {
+      display: block;
+      background: #0f172a;
+      color: white;
+      padding: 12px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 14px;
+      color: #64748b;
+    }
+    .whatsapp {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      background: #25D366;
+      border-radius: 50%;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .whatsapp img {
+      width: 40px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <img src="https://i.ibb.co/6Xv7qZL/logo.png" alt="AI4Business SOUTH AFRICA" />
+      <h1>Mzanzi-AI</h1>
+      <p class="tagline">Free AI Tools for South Africans</p>
+    </header>
+
+    <div class="card-grid">
+      <div class="card">
+        <h3>🤖 Chat with AI</h3>
+        <p>Ask questions, get answers in English or Zulu.</p>
+        <a href="https://huggingface.co/chat" class="btn" target="_blank">Open Chat</a>
+      </div>
+
+      <div class="card">
+        <h3>🖼️ Slide Creator</h3>
+        <p>Turn ideas into presentations in seconds.</p>
+        <a href="https://huggingface.co/spaces/yisol/Doc2Slide" class="btn" target="_blank">Make Slides</a>
+      </div>
+
+      <div class="card">
+        <h3>📄 Document Summarizer</h3>
+        <p>Upload PDFs and get instant summaries.</p>
+        <a href="https://huggingface.co/spaces/pszemraj/long-form-document-summarizer" class="btn" target="_blank">Summarize</a>
+      </div>
+
+      <div class="card">
+        <h3>📝 CV Builder</h3>
+        <p>Create a professional CV in minutes.</p>
+        <a href="https://huggingface.co/spaces/gustavosta/MobileLLaMA-3-8B" class="btn" target="_blank">Build CV</a>
+      </div>
+
+      <div class="card">
+        <h3>🎙️ Voice to Text</h3>
+        <p>Speak and let AI write it down.</p>
+        <a href="https://huggingface.co/spaces/facebook/wav2vec2-large-xlsr-53" class="btn" target="_blank">Transcribe</a>
+      </div>
+    </div>
+
+    <footer>
+      <p>Powered by <strong>AI4Business SOUTH AFRICA</strong><br>
+      🌐 <a href="https://ai4business.co.za">ai4business.co.za</a> | 
+      📧 <a href="mailto:info@ai4business.co.za">info@ai4business.co.za</a>
+      </p>
+    </footer>
+  </div>
+
+  <!-- WhatsApp Button -->
+  <a href="https://wa.me/27692992530?text=Hi%2C%20I%20used%20Mzanzi-AI!" class="whatsapp" target="_blank">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" />
+  </a>
+
+  <!-- PWA Manifest -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(err => console.log(err));
+      });
+    }
+  </script>
+</body>
+</html>
